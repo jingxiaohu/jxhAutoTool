@@ -249,7 +249,7 @@ public class DbInfoUtil {
         String table = "user_info"; */
     	
     	 String driver = ("com.mysql.jdbc.Driver");
-		 String s = "jdbc:mysql://%s:%d/%s?autoReconnect=%s&characterEncoding=%s";
+		 String s = "jdbc:mysql://%s:%d/%s?autoReconnect=%s&characterEncoding=%s&useUnicode=true";
 		 String url = String.format(s, ip, port, db,String.valueOf(reconnect), encoding);
          System.out.println(url);
           
@@ -259,7 +259,7 @@ public class DbInfoUtil {
     
     public static Map<String,String>  returnRemarkInfoDOC(String ip,int port,String db,String user,String pwd,boolean reconnect,String encoding,String tablename) {  
     	 String driver = ("com.mysql.jdbc.Driver");
-		 String s = "jdbc:mysql://%s:%d/%s?autoReconnect=%s&characterEncoding=%s";
+		 String s = "jdbc:mysql://%s:%d/%s?autoReconnect=%s&characterEncoding=%s&useUnicode=true";
 		 String url = String.format(s, ip, port, db,String.valueOf(reconnect), encoding);
          System.out.println(url);
           

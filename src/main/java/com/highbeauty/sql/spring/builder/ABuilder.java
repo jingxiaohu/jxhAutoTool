@@ -2,6 +2,7 @@ package com.highbeauty.sql.spring.builder;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -106,11 +107,13 @@ public class ABuilder {
 			xml = builder.build(rs, pkg + "bean", true,map);
 		}
 
-		System.out.println(new String(xml.getBytes("UTF-8"),"GBK"));
+		System.out.println(new String(xml.getBytes(),"GBK"));
+		System.out.println(xml);
 		String filename = file(is_maven,pkg, src, "bean", tablename, "java");
 		if(moduleName != null && !"".equalsIgnoreCase(moduleName)){
 			filename = moduleName+File.separator+filename;
 		}
+//		writeFile(filename, xml,"TXT");
 		writeFile(filename, xml);
 		conn.close();
 	}
@@ -122,11 +125,12 @@ public class ABuilder {
 		ResultSet rs = SqlEx.executeQuery(conn, sql);
 		NewDaoBuilder builder = new NewDaoBuilder();
 		String xml = builder.build(conn, rs, pkg + "dao", pkg + "bean",map_comment, is_change_DaoName);
-		System.out.println(xml);
+		System.out.println(new String(xml.getBytes(),"GB2312"));
 		String filename = file(is_maven,pkg, src, "dao", tablename + "Dao", "java");
 		if(moduleName != null && !"".equalsIgnoreCase(moduleName)){
 			filename = moduleName+File.separator+filename;
 		}
+//		writeFile(filename, xml,"TXT");
 		writeFile(filename, xml);
 		conn.close();
 
@@ -142,6 +146,7 @@ public class ABuilder {
 		if(moduleName != null && !"".equalsIgnoreCase(moduleName)){
 			filename = moduleName+File.separator+filename;
 		}
+//		writeFile(filename, xml,"TXT");
 		writeFile(filename, xml);
 	}
 
@@ -246,14 +251,43 @@ public class ABuilder {
 			file.delete();
 		}
 		FileOutputStream fos = new FileOutputStream(f);
-
-
 		OutputStreamWriter oStreamWriter = new OutputStreamWriter(fos, "utf-8");
-		oStreamWriter.write(s);
+		oStreamWriter.append(s);
+		oStreamWriter.flush();
 		oStreamWriter.close();
 
+	}
+
+
+	public static void writeFile(String f, String s,String suffix) throws Exception {
+		try {
+			File file = new File(f);
+			if(file != null && !file.exists()){
+				file.mkdirs();
+				file.delete();
+			}
+
+			String prefix = f.substring(0,f.lastIndexOf(".")+1);//前缀 包括 .
+			String old_suffix = f.substring(f.lastIndexOf(".")+1);
+			//变更后缀名
+			File file2 = new File(prefix+suffix);
+			FileOutputStream fos = new FileOutputStream(file2);
+
+			OutputStreamWriter oStreamWriter = new OutputStreamWriter(fos, "utf-8");
+			oStreamWriter.append(s);
+			oStreamWriter.flush();
+			oStreamWriter.close();
+
+			//写完文件后 进行修改文件后缀名再次变更
+			file2.renameTo(file);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+		}
 		/*fos.write(s.getBytes());
 		fos.close();*/
 
 	}
+
+
 }
