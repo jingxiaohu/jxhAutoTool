@@ -248,8 +248,8 @@ public class DbInfoUtil {
                 + "?useUnicode=true&characterEncoding=UTF-8"; 
         String table = "user_info"; */
     	
-    	 String driver = ("com.mysql.jdbc.Driver");
-		 String s = "jdbc:mysql://%s:%d/%s?autoReconnect=%s&characterEncoding=%s&useUnicode=true";
+    	 String driver = ("com.mysql.cj.jdbc.Driver");
+		 String s = "jdbc:mysql://%s:%d/%s?autoReconnect=%s&characterEncoding=%s&useUnicode=true&serverTimezone=UTC";
 		 String url = String.format(s, ip, port, db,String.valueOf(reconnect), encoding);
          System.out.println(url);
           
@@ -258,8 +258,8 @@ public class DbInfoUtil {
       
     
     public static Map<String,String>  returnRemarkInfoDOC(String ip,int port,String db,String user,String pwd,boolean reconnect,String encoding,String tablename) {  
-    	 String driver = ("com.mysql.jdbc.Driver");
-		 String s = "jdbc:mysql://%s:%d/%s?autoReconnect=%s&characterEncoding=%s&useUnicode=true";
+    	 String driver = ("com.mysql.cj.jdbc.Driver");
+		 String s = "jdbc:mysql://%s:%d/%s?autoReconnect=%s&characterEncoding=%s&useUnicode=true&serverTimezone=UTC";
 		 String url = String.format(s, ip, port, db,String.valueOf(reconnect), encoding);
          System.out.println(url);
           

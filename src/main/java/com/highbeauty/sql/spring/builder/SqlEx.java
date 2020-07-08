@@ -164,9 +164,9 @@ public class SqlEx {
 	public static Connection newMysqlConnection(String host, int port,
 			String db, boolean reconnect, String encoding, String user,
 			String password) throws ClassNotFoundException, SQLException {
-		 String driver = ("com.mysql.jdbc.Driver");
-//		 String s = "jdbc:mysql://%s:%d/%s?autoReconnect=%s&characterEncoding=%s";
-		String s = "jdbc:mysql://%s:%d/%s?useSSL=false&serverTimezone=UTC&autoReconnect=%s&characterEncoding=%s&useUnicode=true";
+		 String driver = ("com.mysql.cj.jdbc.Driver");
+		 String s = "jdbc:mysql://%s:%d/%s?autoReconnect=%s&characterEncoding=%s&serverTimezone=UTC";
+//		String s = "jdbc:mysql://%s:%d/%s?useSSL=false&serverTimezone=UTC&autoReconnect=%s&characterEncoding=%s&useUnicode=true";
 		 String url = String.format(s, host, port, db,String.valueOf(reconnect), encoding);
 		Class.forName(driver);
 		return DriverManager.getConnection(url, user,password);
