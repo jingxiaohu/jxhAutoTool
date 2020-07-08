@@ -354,6 +354,9 @@ public class BeanNewBuilder {
 		// ///////////////////////////////////
 		sb.append("\r\n");
 		sb.append("    ");
+		sb.append("@Override");
+		sb.append("\r\n");
+		sb.append("    ");
 		sb.append("public Object clone() throws CloneNotSupportedException{");
 		sb.append("\r\n");
 		sb.append("        return super.clone();");
