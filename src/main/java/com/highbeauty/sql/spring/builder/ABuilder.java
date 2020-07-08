@@ -48,7 +48,45 @@ public class ABuilder {
 		DaoFactoryBuild(moduleName,is_maven,tablenames, pkg, src,is_change_DaoName);
 
 	}
+	/**
+	 * @param src:false:不写在SRC下 true:写在SRC下
+	 * @param pkg :"test.dao."
+	 * @param tablenames:{"t_radio1","t_radio2"}
+	 * @param ip:127.0.0.1
+	 * @param port:3306
+	 * @param user:root
+	 * @param password:root
+	 * @param databaseName:bag_radio
+	 * @param  moduleName MAVEN项目中的module
+	 * @param is_javabean_WrapperClass 是否采用包装类 true :是  false :否
+	 * @param is_change_DaoName  是否让DaoBean 名称变化  (例如： user_info表 user_infoDao2) true :是  false :否
+	 * @param is_cover_DaoFactory 是否重新覆盖 DaoFactoryBuild true :是  false :否
+	 * @throws Throwable
+	 */
+	public static void  AutoCoder(boolean is_cover_DaoFactory,boolean is_change_DaoName,boolean is_javabean_WrapperClass,boolean is_maven,boolean src,String moduleName,String pkg,String[] tablenames,String ip,int port,String user,String password,String databaseName) throws Throwable{
+//		boolean immediately = true;
+//		String appcontext = "";
+		Connection conn = null;
+		for (String tablename : tablenames) {
+			conn = SqlEx.newMysqlConnection(ip,port, databaseName, user, password);
+			Map<String,String>  map = DbInfoUtil.returnRemarkInfo(ip, port, databaseName, user, password, true, "UTF-8", tablename);
+			BeanBuild(is_javabean_WrapperClass,moduleName,is_maven,conn, tablename, pkg, src,map);
+			conn = SqlEx.newMysqlConnection(ip,port, databaseName, user, password);
+			DaoBuild(moduleName,is_maven,conn, tablename, pkg, src,map, is_change_DaoName);
+			conn = SqlEx.newMysqlConnection(ip,port, databaseName, user, password);
+			map = DbInfoUtil.returnRemarkInfoDOC(ip, port, databaseName, user, password, true, "UTF-8", tablename);
+			DocBuild(moduleName,is_maven,conn, tablename, pkg, src,map);
+			//conn = SqlEx.newMysqlConnection(ip,port, databaseName, user, password);
+			//ServiceBuild(conn, tablename, appcontext, pkg, src, immediately);
+		}
 
+		//创建DAO代理工厂
+		if(is_cover_DaoFactory){
+			DaoFactoryBuild(moduleName,is_maven,tablenames, pkg, src,is_change_DaoName);
+		}
+
+
+	}
 	/**
 	 * @param args
 	 * @throws Exception

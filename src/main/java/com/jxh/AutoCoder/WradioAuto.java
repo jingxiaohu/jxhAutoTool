@@ -13,6 +13,9 @@ public class WradioAuto {
 		//TODO 是否让DaoBean 名称变化  例如： user_info表 user_infoDao2
 		boolean is_change_DaoName = false;
 
+		//TODO 是否重新覆盖 DaoFactoryBuild true :是  false :否
+		boolean is_cover_DaoFactory = false;
+
 		String moduleName="";//当没有的时候就不加入到路径中去
 		String pkg = "com.gjp.wz.springjdbc.";
 		/*String[] tablenames = {"user_info","car_in_out","fault_record","park_coupon","park_device","park_info","pay_park","rental_charging_rule","user_moneyback","user_park_coupon","user_login_log",
@@ -23,7 +26,7 @@ public class WradioAuto {
 		String user = "root";
 		String password = "root";
 		String databaseName = "account2";
-		ABuilder.AutoCoder(is_change_DaoName,is_javabean_WrapperClass,is_maven,src,moduleName, pkg, tablenames, ip, port, user, password, databaseName);
+		ABuilder.AutoCoder(is_cover_DaoFactory,is_change_DaoName,is_javabean_WrapperClass,is_maven,src,moduleName, pkg, tablenames, ip, port, user, password, databaseName);
 	}
 
 }
