@@ -3,7 +3,9 @@
 #### 介绍
 {**jxhAutoTool软件简介**
  jxhAutoTool 是一款专门为springjdbc开发的自动化生成器软件，目前只支持MYSQL数据库 
- [https://gitee.com/cdtrh/jxhAutoTool.git](https://gitee.com/cdtrh/jxhAutoTool.git)}
+ [https://gitee.com/cdtrh/jxhAutoTool.git](https://gitee.com/cdtrh/jxhAutoTool.git)
+ [https://gitee.com/cdtrh/jxhAutoTool-Demo.git](https://gitee.com/cdtrh/jxhAutoTool-Demo.git)
+ }
 
 #### 软件架构
 软件架构说明
