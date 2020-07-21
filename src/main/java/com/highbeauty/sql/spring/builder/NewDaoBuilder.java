@@ -8,8 +8,10 @@ import java.util.Map;
 import java.util.Vector;
 
 import com.highbeauty.pinyin.PinYin;
+import com.highbeauty.util.StringBufferUtils;
+
 public class NewDaoBuilder {
- private static String primarykey = null;//主键
+ private static List<String> primarykey = null;//主键
 // private String autoIndex = null;//自增索引
  
  public static void main(String[] args) throws Exception {
@@ -27,11 +29,11 @@ public class NewDaoBuilder {
    String beanPkg,Map<String,String> map_comment,boolean is_change_DaoName) throws Exception {
   ResultSetMetaData rsmd = rs.getMetaData();
   String tableName = rsmd.getTableName(1);
-  Map<String, List<String>> indexs = IndexBuilder.getIndex(conn, rsmd);
+  Map<String, List<String>> indexs = IndexBuilder.getIndex2(conn, rsmd);
   //定义主键字段
   if(indexs != null && indexs.size()>0){
 	  if(indexs.get("PRIMARY") != null && indexs.get("PRIMARY").size() > 0){
-		  primarykey = indexs.get("PRIMARY").get(0);
+		  primarykey = indexs.get("PRIMARY");
 	  }
   }
   
@@ -178,7 +180,11 @@ public class NewDaoBuilder {
   sb.append("\r\n");
   String key = AutoIncrement.getAutoIncrement(rsmd);
   if (key == null){
-	   key = primarykey;
+    StringBuffer buffer_prk = new StringBuffer();
+    for (String prk : primarykey) {
+     buffer_prk.append(prk).append(",");
+    }
+    key = buffer_prk.deleteCharAt(buffer_prk.length() - 1).toString();
   }
   String fields = getFields(rsmd, key, true);
   String fields2 = getFields(rsmd, key, false);
@@ -229,8 +235,12 @@ public class NewDaoBuilder {
   StringBuffer sb = new StringBuffer();
   String key = AutoIncrement.getAutoIncrement(rsmd);
   if (key == null){
-	   key = primarykey;
- }
+   StringBuffer buffer_prk = new StringBuffer();
+   for (String prk : primarykey) {
+    buffer_prk.append(prk).append(",");
+   }
+   key = buffer_prk.deleteCharAt(buffer_prk.length() - 1).toString();
+  }
   String beanName = StrEx.upperFirst(PinYin.getShortPinYin(tableName));
   // Connection
   String fields = getFields(rsmd, key, false);
@@ -297,7 +307,11 @@ public class NewDaoBuilder {
   StringBuffer sb = new StringBuffer();
   String key = AutoIncrement.getAutoIncrement(rsmd);
   if (key == null){
-	   key = primarykey;
+   StringBuffer buffer_prk = new StringBuffer();
+   for (String prk : primarykey) {
+    buffer_prk.append(prk).append(",");
+   }
+   key = buffer_prk.deleteCharAt(buffer_prk.length() - 1).toString();
   }
   String beanName = StrEx.upperFirst(PinYin.getShortPinYin(tableName));
   // Connection
@@ -315,11 +329,11 @@ public class NewDaoBuilder {
   sb.append("        try{\r\n");
   sb.append("            sql = \"INSERT INTO \"+TABLENAME2+\" (" + fields +  ") VALUES (" + values + ")\";\r\n");
   sb.append("            return _np.getJdbcOperations().batchUpdate(sql, new BatchPreparedStatementSetter() {\r\n");
-  sb.append("                //@Override\r\n");
+  sb.append("                @Override\r\n");
   sb.append("                public int getBatchSize() {\r\n");
   sb.append("                    return beans.size();\r\n");
   sb.append("                }\r\n");
-  sb.append("                //@Override\r\n");
+  sb.append("                @Override\r\n");
   sb.append("                public void setValues(PreparedStatement ps, int i) throws SQLException {\r\n");
   sb.append("                    " + beanName + " bean = beans.get(i);\r\n");
   int count = rsmd.getColumnCount();
@@ -357,22 +371,52 @@ public class NewDaoBuilder {
    throws SQLException {
   StringBuffer sb = new StringBuffer();
   String key = AutoIncrement.getAutoIncrement(rsmd);
+
+
   if (key == null){
-	   key = primarykey;
+   StringBuffer buffer_prk = new StringBuffer();
+   for (String prk : primarykey) {
+    buffer_prk.append(prk).append(",");
+   }
+   key = buffer_prk.deleteCharAt(buffer_prk.length() - 1).toString();
   }
-  String javaType = JavaType.getType(rsmd, key);
+  StringBuffer paramsTypeBuff = new StringBuffer();
+  StringBuffer paramsTypeBuff_delete = new StringBuffer();
+  StringBuffer paramsTypeBuff_delete2 = new StringBuffer();
+  StringBuffer paramsTypeBuff_delete_params = new StringBuffer();
+  StringBuffer paramsStrBuff = new StringBuffer();
+  StringBuffer whereBuff_big = new StringBuffer();
+  StringBuffer whereBuff = new StringBuffer();
+  //传递占位符
+  StringBuffer whereBuff_param = new StringBuffer();
+  for (String prk : primarykey) {
+   String keyJavaType = JavaType.getType(rsmd, prk);
+   paramsTypeBuff.append(keyJavaType+" "+prk).append(",");
+   paramsStrBuff.append(prk).append(" ").append(",");
+   whereBuff_big.append(prk+">:"+prk).append(" and ");
+   whereBuff.append(prk+"=:"+prk).append(" and ");
+   paramsTypeBuff_delete.append(keyJavaType+"[] "+prk+"s ").append(",");
+   paramsTypeBuff_delete2.append("final "+keyJavaType+"[] "+prk+"s ").append(",");
+   paramsTypeBuff_delete_params.append(prk+"s ").append(",");
+   whereBuff_param.append(prk+"=?").append(" and ");
+  }
+
+
+
   sb.append("    //删除单条数据\r\n");
-  sb.append("    public int deleteByKey(" + javaType + " " + key + ") throws SQLException{\r\n");
-  sb.append("        return deleteByKey(" + key + ", TABLENAME);\r\n");
+  sb.append("    public int deleteByKey(" + StringBufferUtils.replaceStr_Last(paramsTypeBuff,",") + ") throws SQLException{\r\n");
+  sb.append("        return deleteByKey(" + StringBufferUtils.replaceStr_Last(paramsStrBuff,",") + ", TABLENAME);\r\n");
   sb.append("    }\r\n");
   sb.append("\r\n");
   sb.append("    //删除单条数据\r\n");
-  sb.append("    public int deleteByKey(" + javaType + " " + key + ", String TABLENAME2) throws SQLException{\r\n");
+  sb.append("    public int deleteByKey(" + StringBufferUtils.replaceStr_Last(paramsTypeBuff,",") + ", String TABLENAME2) throws SQLException{\r\n");
   sb.append("        String sql;\r\n");
   sb.append("        try{\r\n");
-  sb.append("            sql = \"DELETE FROM \"+TABLENAME2+\" WHERE " + key + "=:" + key + "\";\r\n");
+  sb.append("            sql = \"DELETE FROM \"+TABLENAME2+\" WHERE " + StringBufferUtils.replaceStr_Last(whereBuff_param," and ") + "\";\r\n");
   sb.append("            Map<String,Object> param = new HashMap<String,Object>();\r\n");
-  sb.append("            param.put(\"" + key  +"\", " + key + ");\r\n");
+  for (String prk : primarykey) {
+   sb.append("            param.put(\""+prk+"\", "+prk+");\r\n");
+  }
   sb.append("            return _np.update(sql, param);\r\n");
   sb.append("        }catch(Exception e){\r\n");
   sb.append("            log.error(\"deleteByKey\", e);").append("\r\n");
@@ -387,28 +431,61 @@ public class NewDaoBuilder {
    throws SQLException {
   StringBuffer sb = new StringBuffer();
   String key = AutoIncrement.getAutoIncrement(rsmd);
+
+
   if (key == null){
-	   key = primarykey;
+   StringBuffer buffer_prk = new StringBuffer();
+   for (String prk : primarykey) {
+    buffer_prk.append(prk).append(",");
+   }
+   key = buffer_prk.deleteCharAt(buffer_prk.length() - 1).toString();
   }
-  String javaType = JavaType.getType(rsmd, key);
+  StringBuffer paramsTypeBuff = new StringBuffer();
+  StringBuffer paramsTypeBuff_delete = new StringBuffer();
+  StringBuffer paramsTypeBuff_delete2 = new StringBuffer();
+  StringBuffer paramsTypeBuff_delete_params = new StringBuffer();
+  StringBuffer paramsStrBuff = new StringBuffer();
+  StringBuffer whereBuff_big = new StringBuffer();
+  StringBuffer whereBuff = new StringBuffer();
+  //传递占位符
+  StringBuffer whereBuff_param = new StringBuffer();
+  for (String prk : primarykey) {
+   String keyJavaType = JavaType.getType(rsmd, prk);
+   paramsTypeBuff.append(keyJavaType+" "+prk).append(",");
+   paramsStrBuff.append(prk).append(" ").append(",");
+   whereBuff_big.append(prk+">:"+prk).append(" and ");
+   whereBuff.append(prk+"=:"+prk).append(" and ");
+   paramsTypeBuff_delete.append(keyJavaType+"[] "+prk+"s ").append(",");
+   paramsTypeBuff_delete2.append("final "+keyJavaType+"[] "+prk+"s ").append(",");
+   paramsTypeBuff_delete_params.append(prk+"s ").append(",");
+   whereBuff_param.append(prk+"=?").append(" and ");
+  }
+
+
   sb.append("    //批量删除数据\r\n");
-  sb.append("    public int[] deleteByKey("+javaType+"[] keys) throws SQLException{\r\n");
-  sb.append("        return deleteByKey(keys, TABLENAME);\r\n");
+  sb.append("    public int[] deleteByKey("+StringBufferUtils.replaceStr_Last(paramsTypeBuff_delete,",")+") throws SQLException{\r\n");
+  sb.append("        return deleteByKey("+StringBufferUtils.replaceStr_Last(paramsTypeBuff_delete_params,",")+", TABLENAME);\r\n");
   sb.append("    }\r\n");
   sb.append("\r\n");
   sb.append("    //批量删除数据\r\n");
-  sb.append("    public int[] deleteByKey(final "+javaType+"[] keys, String TABLENAME2) throws SQLException{\r\n");
+  sb.append("    public int[] deleteByKey("+StringBufferUtils.replaceStr_Last(paramsTypeBuff_delete2,",")+", String TABLENAME2) throws SQLException{\r\n");
   sb.append("        String sql;\r\n");
   sb.append("        try{\r\n");
-  sb.append("            sql = \"DELETE FROM \"+TABLENAME2+\" WHERE "+key+"=?\";\r\n");
+  sb.append("            sql = \"DELETE FROM \"+TABLENAME2+\" WHERE "+StringBufferUtils.replaceStr_Last(whereBuff_param," and ")+"\";\r\n");
   sb.append("            return _np.getJdbcOperations().batchUpdate(sql, new BatchPreparedStatementSetter() {\r\n");
-  sb.append("                //@Override\r\n");
+  sb.append("                @Override\r\n");
   sb.append("                public int getBatchSize() {\r\n");
-  sb.append("                    return keys.length;\r\n");
+  sb.append("                    return "+primarykey.get(0)+"s.length;\r\n");
   sb.append("                }\r\n");
-  sb.append("                //@Override\r\n");
+  sb.append("                @Override\r\n");
   sb.append("                public void setValues(PreparedStatement ps, int i) throws SQLException {\r\n");
-  sb.append("                    ps."+BatchOP.setOP(rsmd, key)+"(1 , keys[i]);\r\n");
+
+  for (int i = 0; i < primarykey.size(); i++) {
+   sb.append("                    ps."+BatchOP.setOP(rsmd, primarykey.get(i))+"("+(i+1)+" , "+primarykey.get(i)+"s[i]);\r\n");
+  }
+//  sb.append("                    ps."+BatchOP.setOP(rsmd, primarykey)+"(1 , keys[i]);\r\n");
+
+
   sb.append("                }\r\n");
   sb.append("            });\r\n");
   sb.append("        }catch(Exception e){\r\n");
@@ -425,103 +502,156 @@ public class NewDaoBuilder {
   StringBuffer sb = new StringBuffer();
   String key = AutoIncrement.getAutoIncrement(rsmd);
   if (key == null){
-	   key = primarykey;
+
+   StringBuffer buffer_prk = new StringBuffer();
+   for (String prk : primarykey) {
+     buffer_prk.append(prk).append(",");
+   }
+   key = buffer_prk.deleteCharAt(buffer_prk.length() - 1).toString();
+
   }
   String beanName = StrEx.upperFirst(PinYin.getShortPinYin(tableName));
   String fields = getFields(rsmd, key, true);
-  sb.append("    //查询所有数据\r\n");
-  sb.append("    public List<" + beanName + "> selectAll() {\r\n");
-  sb.append("        return selectAll(TABLENAME);\r\n");
-  sb.append("    }\r\n");
-  sb.append("\r\n");
-  sb.append("    //查询所有数据\r\n");
-  sb.append("    public List<" + beanName + "> selectAll(String TABLENAME2) {\r\n");
-  sb.append("        String sql;\r\n");
-  sb.append("        try{\r\n");
-  sb.append("            sql = \"SELECT "+fields+" FROM \"+TABLENAME2+\" ORDER BY "+key+"\";\r\n");
-  sb.append("            return _np.getJdbcOperations().query(sql, new BeanPropertyRowMapper<"+beanName+">(" + beanName + ".class));\r\n");
-  sb.append("        }catch(Exception e){\r\n");
-  sb.append("            //createTable(TABLENAME2);\r\n");
-  sb.append("            log.error(\"selectAll\", e);").append("\r\n");
-  sb.append("            return new ArrayList<"+beanName+">();\r\n");
-  sb.append("        }\r\n");
-  sb.append("    }\r\n");
-  sb.append("\r\n");
-  sb.append("    //查询最新数据\r\n");
-  sb.append("    public List<" + beanName + "> selectLast(int num) {\r\n");
-  sb.append("        return selectLast(num, TABLENAME);\r\n");
-  sb.append("    }\r\n");
-  sb.append("\r\n");
-  sb.append("    //查询所有数据\r\n");
-  sb.append("    public List<" + beanName + "> selectLast(int num ,String TABLENAME2) {\r\n");
-  sb.append("        String sql;\r\n");
-  sb.append("        try{\r\n");
-  sb.append("            sql = \"SELECT "+fields+" FROM \"+TABLENAME2+\" ORDER BY "+key+" DESC LIMIT \"+num+\"\" ;\r\n");
-  sb.append("            return _np.getJdbcOperations().query(sql, new BeanPropertyRowMapper<"+beanName+">(" + beanName + ".class));\r\n");
-  sb.append("        }catch(Exception e){\r\n");
-  sb.append("            //createTable(TABLENAME2);\r\n");
-  sb.append("            log.error(\"selectLast\", e);").append("\r\n");
-  sb.append("            return new ArrayList<"+beanName+">();\r\n");
-  sb.append("        }\r\n");
-  sb.append("    }\r\n");
-  sb.append("\r\n");
- 
-  return sb.toString();
+
+   StringBuffer paramsTypeBuff = new StringBuffer();
+   StringBuffer paramsStrBuff = new StringBuffer();
+   StringBuffer whereBuff_big = new StringBuffer();
+   StringBuffer whereBuff = new StringBuffer();
+   for (String prk : primarykey) {
+    String keyJavaType = JavaType.getType(rsmd, key);
+    paramsTypeBuff.append(keyJavaType+" "+prk).append(",");
+    paramsStrBuff.append(prk).append(" ").append(",");
+    whereBuff_big.append(prk+">:"+prk).append(" and ");
+    whereBuff.append(prk+"=:"+prk).append(" and ");
+   }
+   sb.append("    //查询所有数据\r\n");
+   sb.append("    public List<" + beanName + "> selectAll() {\r\n");
+   sb.append("        return selectAll(TABLENAME);\r\n");
+   sb.append("    }\r\n");
+   sb.append("\r\n");
+   sb.append("    //查询所有数据\r\n");
+   sb.append("    public List<" + beanName + "> selectAll(String TABLENAME2) {\r\n");
+   sb.append("        String sql;\r\n");
+   sb.append("        try{\r\n");
+   sb.append("            sql = \"SELECT "+fields+" FROM \"+TABLENAME2+\" ORDER BY "+StringBufferUtils.replaceStr_Last(paramsStrBuff,",")+"\";\r\n");
+   sb.append("            return _np.getJdbcOperations().query(sql, new BeanPropertyRowMapper<"+beanName+">(" + beanName + ".class));\r\n");
+   sb.append("        }catch(Exception e){\r\n");
+   sb.append("            //createTable(TABLENAME2);\r\n");
+   sb.append("            log.error(\"selectAll\", e);").append("\r\n");
+   sb.append("            return new ArrayList<"+beanName+">();\r\n");
+   sb.append("        }\r\n");
+   sb.append("    }\r\n");
+   sb.append("\r\n");
+   sb.append("    //查询最新数据\r\n");
+   sb.append("    public List<" + beanName + "> selectLast(int num) {\r\n");
+   sb.append("        return selectLast(num, TABLENAME);\r\n");
+   sb.append("    }\r\n");
+   sb.append("\r\n");
+   sb.append("    //查询所有数据\r\n");
+   sb.append("    public List<" + beanName + "> selectLast(int num ,String TABLENAME2) {\r\n");
+   sb.append("        String sql;\r\n");
+   sb.append("        try{\r\n");
+   sb.append("            sql = \"SELECT "+fields+" FROM \"+TABLENAME2+\" ORDER BY "+StringBufferUtils.replaceStr_Last(paramsTypeBuff,",")+" DESC LIMIT \"+num+\"\" ;\r\n");
+   sb.append("            return _np.getJdbcOperations().query(sql, new BeanPropertyRowMapper<"+beanName+">(" + beanName + ".class));\r\n");
+   sb.append("        }catch(Exception e){\r\n");
+   sb.append("            //createTable(TABLENAME2);\r\n");
+   sb.append("            log.error(\"selectLast\", e);").append("\r\n");
+   sb.append("            return new ArrayList<"+beanName+">();\r\n");
+   sb.append("        }\r\n");
+   sb.append("    }\r\n");
+   sb.append("\r\n");
+
+   return sb.toString();
+
+
+
+
+
  }
  static String generateSelect(ResultSetMetaData rsmd, String tableName)
    throws SQLException {
   StringBuffer sb = new StringBuffer();
   String key = AutoIncrement.getAutoIncrement(rsmd);
   if (key == null){
-	   key = primarykey;
+
+   StringBuffer buffer_prk = new StringBuffer();
+   for (String prk : primarykey) {
+    buffer_prk.append(prk).append(",");
+   }
+   key = buffer_prk.deleteCharAt(buffer_prk.length() - 1).toString();
+
   }
   String beanName = StrEx.upperFirst(PinYin.getShortPinYin(tableName));
   String fields = getFields(rsmd, key, true);
-  String keyJavaType = JavaType.getType(rsmd, key);
-  sb.append("    //根据主键查询\r\n");
-  sb.append("    public List<" + beanName + "> selectGtKey("+keyJavaType+" "+key+") {\r\n");
-  sb.append("        return selectGtKey(" + key + ", TABLENAME);\r\n");
-  sb.append("    }\r\n");
-  sb.append("\r\n");
-  sb.append("    //根据主键查询\r\n");
-  sb.append("    public List<" + beanName + "> selectGtKey("+keyJavaType+" "+key+", String TABLENAME2) {\r\n");
-  sb.append("        String sql;\r\n");
-  sb.append("        try{\r\n");
-  sb.append("            sql=\"SELECT "+fields+" FROM \"+TABLENAME2+\" WHERE "+key+">:"+key+"\";\r\n");
-  sb.append("            Map<String,Object> param = new HashMap<String,Object>();\r\n");
-  sb.append("            param.put(\""+key+"\", "+key+");\r\n");
-  sb.append("            return _np.query(sql, param, new BeanPropertyRowMapper<"+beanName+">("+ beanName + ".class));\r\n");
-  sb.append("        }catch(Exception e){\r\n");
-  sb.append("            //createTable(TABLENAME2);\r\n");
-  sb.append("            log.error(\"selectGtKey\", e);").append("\r\n");
-  sb.append("            return new ArrayList<"+beanName+">();\r\n");
-  sb.append("        }\r\n");
-  sb.append("    }\r\n");
-  sb.append("\r\n");
-  // Connection
-  sb.append("    //根据主键查询\r\n");
-  sb.append("    public " + beanName + " selectByKey("+keyJavaType+" "+key+") {\r\n");
-  sb.append("        return selectByKey(" + key + ", TABLENAME);\r\n");
-  sb.append("    }\r\n");
-  sb.append("\r\n");
-  sb.append("    //根据主键查询\r\n");
-  sb.append("    public " + beanName + " selectByKey("+keyJavaType+" "+key+", String TABLENAME2) {\r\n");
-  sb.append("        String sql;\r\n");
-  sb.append("        try{\r\n");
-  sb.append("            sql=\"SELECT "+fields+" FROM \"+TABLENAME2+\" WHERE "+key+"=:"+key+"\";\r\n");
-  sb.append("            Map<String,Object> param = new HashMap<String,Object>();\r\n");
-  sb.append("            param.put(\""+key+"\", "+key+");\r\n");
-  sb.append("            List<" + beanName+ "> list =  _np.query(sql, param, new BeanPropertyRowMapper<"+beanName+">(" + beanName + ".class));\r\n");
-  sb.append("            return (list == null || list.size() == 0) ? null : list.get(0);\r\n");
-  sb.append("        }catch(Exception e){\r\n");
-  sb.append("            //createTable(TABLENAME2);\r\n");
-  sb.append("            log.error(\"selectByKey "+key+"=\"+"+key+",e);").append("\r\n");
-  sb.append("            return null;\r\n");
-  sb.append("        }\r\n");
-  sb.append("    }\r\n");
-  sb.append("\r\n");
-  return sb.toString();
+
+
+   StringBuffer paramsTypeBuff = new StringBuffer();
+   StringBuffer paramsStrBuff = new StringBuffer();
+   StringBuffer whereBuff_big = new StringBuffer();
+   StringBuffer whereBuff = new StringBuffer();
+   for (String prk : primarykey) {
+    String keyJavaType = JavaType.getType(rsmd, prk);
+    paramsTypeBuff.append(keyJavaType+" "+prk).append(",");
+    paramsStrBuff.append(prk).append(" ").append(",");
+    whereBuff_big.append(prk+">:"+prk).append(" and ");
+    whereBuff.append(prk+"=:"+prk).append(" and ");
+   }
+
+   sb.append("    //根据主键查询\r\n");
+   sb.append("    public List<" + beanName + "> selectGtKey("+ StringBufferUtils.replaceStr_Last(paramsTypeBuff,",")+") {\r\n");
+   sb.append("        return selectGtKey(" + StringBufferUtils.replaceStr_Last(paramsStrBuff,",") + ", TABLENAME);\r\n");
+   sb.append("    }\r\n");
+   sb.append("\r\n");
+   sb.append("    //根据主键查询\r\n");
+   sb.append("    public List<" + beanName + "> selectGtKey("+StringBufferUtils.replaceStr_Last(paramsTypeBuff,",")+", String TABLENAME2) {\r\n");
+   sb.append("        String sql;\r\n");
+   sb.append("        try{\r\n");
+   sb.append("            sql=\"SELECT "+fields+" FROM \"+TABLENAME2+\" WHERE "+StringBufferUtils.replaceStr_Last(whereBuff_big," and ")+"\";\r\n");
+   sb.append("            Map<String,Object> param = new HashMap<String,Object>();\r\n");
+   for (String prk : primarykey) {
+    sb.append("            param.put(\""+prk+"\", "+prk+");\r\n");
+   }
+   sb.append("            return _np.query(sql, param, new BeanPropertyRowMapper<"+beanName+">("+ beanName + ".class));\r\n");
+   sb.append("        }catch(Exception e){\r\n");
+   sb.append("            //createTable(TABLENAME2);\r\n");
+   sb.append("            log.error(\"selectGtKey\", e);").append("\r\n");
+   sb.append("            return new ArrayList<"+beanName+">();\r\n");
+   sb.append("        }\r\n");
+   sb.append("    }\r\n");
+   sb.append("\r\n");
+   // Connection
+   sb.append("    //根据主键查询\r\n");
+   sb.append("    public " + beanName + " selectByKey("+StringBufferUtils.replaceStr_Last(paramsTypeBuff,",")+") {\r\n");
+   sb.append("        return selectByKey(" + StringBufferUtils.replaceStr_Last(paramsStrBuff,",") + ", TABLENAME);\r\n");
+   sb.append("    }\r\n");
+   sb.append("\r\n");
+   sb.append("    //根据主键查询\r\n");
+   sb.append("    public " + beanName + " selectByKey("+StringBufferUtils.replaceStr_Last(paramsTypeBuff,",")+", String TABLENAME2) {\r\n");
+   sb.append("        String sql;\r\n");
+   sb.append("        try{\r\n");
+   sb.append("            sql=\"SELECT "+fields+" FROM \"+TABLENAME2+\" WHERE "+StringBufferUtils.replaceStr_Last(whereBuff," and ")+"\";\r\n");
+   sb.append("            Map<String,Object> param = new HashMap<String,Object>();\r\n");
+   for (String prk : primarykey) {
+   sb.append("            param.put(\""+prk+"\", "+prk+");\r\n");
+   }
+   sb.append("            List<" + beanName+ "> list =  _np.query(sql, param, new BeanPropertyRowMapper<"+beanName+">(" + beanName + ".class));\r\n");
+   sb.append("            return (list == null || list.size() == 0) ? null : list.get(0);\r\n");
+   sb.append("        }catch(Exception e){\r\n");
+   sb.append("            //createTable(TABLENAME2);\r\n");
+   sb.append("            log.error(\"selectByKey "+StringBufferUtils.replaceStr_Last(paramsTypeBuff,",")+"\",e);").append("\r\n");
+   sb.append("            return null;\r\n");
+   sb.append("        }\r\n");
+   sb.append("    }\r\n");
+   sb.append("\r\n");
+   return sb.toString();
+  //}
+
+
  }
+
+
+
+
  static String generateSelectByIndex(ResultSetMetaData rsmd,
    String tableName, List<String> indexs, MyIndex mi)
    throws SQLException {
@@ -656,6 +786,10 @@ public class NewDaoBuilder {
   sb.append("\r\n");
   return sb.toString();
  }
+
+
+
+
  static String generateCount(ResultSetMetaData rsmd, String tableName) {
   StringBuffer sb = new StringBuffer();
   sb.append("    //所有数据总数\r\n");
@@ -679,6 +813,10 @@ public class NewDaoBuilder {
   sb.append("\r\n");
   return sb.toString();
  }
+
+
+
+
  static String generateIndexCount(ResultSetMetaData rsmd, String tableName,
    List<String> indexs, MyIndex mi) throws SQLException {
   StringBuffer ukey = new StringBuffer();
@@ -783,6 +921,8 @@ public class NewDaoBuilder {
   sb.append("\r\n");
   return sb.toString();
  }
+
+
  static String generateSelectByPage(ResultSetMetaData rsmd, String tableName)
    throws SQLException {
   StringBuffer sb = new StringBuffer();
@@ -811,14 +951,39 @@ public class NewDaoBuilder {
   sb.append("\r\n");
   return sb.toString();
  }
+
+
+ /**
+  * 单个更新
+  * @param rsmd
+  * @param tableName
+  * @return
+  * @throws SQLException
+  */
  static String generateUpdate(ResultSetMetaData rsmd, String tableName)
    throws SQLException {
   StringBuffer sb = new StringBuffer();
   String key = AutoIncrement.getAutoIncrement(rsmd);
   String beanName = StrEx.upperFirst(PinYin.getShortPinYin(tableName));
   if (key == null){
-   key = primarykey;
+   StringBuffer buffer_prk = new StringBuffer();
+   for (String prk : primarykey) {
+    buffer_prk.append(prk).append(",");
+   }
+   key = buffer_prk.deleteCharAt(buffer_prk.length() - 1).toString();
   }
+  StringBuffer paramsTypeBuff = new StringBuffer();
+  StringBuffer paramsStrBuff = new StringBuffer();
+  StringBuffer whereBuff_big = new StringBuffer();
+  StringBuffer whereBuff = new StringBuffer();
+  for (String prk : primarykey) {
+   String keyJavaType = JavaType.getType(rsmd, prk);
+   paramsTypeBuff.append(keyJavaType+" "+prk).append(",");
+   paramsStrBuff.append(prk).append(" ").append(",");
+   whereBuff_big.append(prk+">:"+prk).append(" and ");
+   whereBuff.append(prk+"=:"+prk).append(" and ");
+  }
+
 
   sb.append("    //修改数据\r\n");
   sb.append("    public int updateByKey(" + beanName + " bean) {\r\n");
@@ -843,7 +1008,7 @@ public class NewDaoBuilder {
     sb.append(",");
    }
   }
-  sb.append(" WHERE "+key+"=:"+key+"\";\r\n");
+  sb.append(" WHERE "+StringBufferUtils.replaceStr_Last(whereBuff," and ")+"\";\r\n");
   sb.append("            SqlParameterSource ps = new BeanPropertySqlParameterSource(bean);\r\n");
   sb.append("            return _np.update(sql, ps);\r\n");
   sb.append("        }catch(Exception e){\r\n");
@@ -885,7 +1050,7 @@ public class NewDaoBuilder {
     sb.append(",");
    }
   }
-  sb.append(" WHERE "+key+"=:"+key+"\";\r\n");
+  sb.append(" WHERE "+StringBufferUtils.replaceStr_Last(whereBuff," and ")+"\";\r\n");
 
   sb.append("            if(version != null ){  \r\n");
   sb.append("                sql += \" and  \"+version_name+\"=\"+version.longValue();\r\n");
@@ -907,14 +1072,49 @@ public class NewDaoBuilder {
 
   return sb.toString();
  }
+
+
+ /**
+  * 批量更新
+  * @param rsmd
+  * @param tableName
+  * @return
+  * @throws SQLException
+  */
  static String generateBatchUpdate(ResultSetMetaData rsmd, String tableName)
    throws SQLException {
   StringBuffer sb = new StringBuffer();
   String key = AutoIncrement.getAutoIncrement(rsmd);
   String beanName = StrEx.upperFirst(PinYin.getShortPinYin(tableName));
+
+
+
+
   if (key == null){
-   key = primarykey;
+   StringBuffer buffer_prk = new StringBuffer();
+   for (String prk : primarykey) {
+    buffer_prk.append(prk).append(",");
+   }
+   key = buffer_prk.deleteCharAt(buffer_prk.length() - 1).toString();
   }
+  StringBuffer paramsTypeBuff = new StringBuffer();
+  StringBuffer paramsStrBuff = new StringBuffer();
+  StringBuffer whereBuff_big = new StringBuffer();
+  StringBuffer whereBuff = new StringBuffer();
+  //传递占位符
+  StringBuffer whereBuff_param = new StringBuffer();
+  for (String prk : primarykey) {
+   String keyJavaType = JavaType.getType(rsmd, prk);
+   paramsTypeBuff.append(keyJavaType+" "+prk).append(",");
+   paramsStrBuff.append(prk).append(" ").append(",");
+   whereBuff_big.append(prk+">:"+prk).append(" and ");
+   whereBuff.append(prk+"=:"+prk).append(" and ");
+   whereBuff_param.append(prk+"=?").append(" and ");
+  }
+
+
+
+
   sb.append("    //批量修改数据\r\n");
   sb.append("    public int[] updateByKey (final List<" + beanName + "> beans) throws SQLException{\r\n");
   sb.append("        return updateByKey(beans, TABLENAME);\r\n");
@@ -928,7 +1128,7 @@ public class NewDaoBuilder {
   int count = rsmd.getColumnCount();
   for (int i = 1; i <= count; i++) {
    String f = rsmd.getColumnName(i);
-   if (f.equals(key))
+   if (primarykey.contains(f))
     continue;
    sb.append(f);
    sb.append("=?");
@@ -936,30 +1136,51 @@ public class NewDaoBuilder {
     sb.append(",");
    }
   }
-  sb.append(" WHERE "+key+"=?\";\r\n");
+  sb.append(" WHERE "+StringBufferUtils.replaceStr_Last(whereBuff_param," and ")+"\";\r\n");
   sb.append("            return _np.getJdbcOperations().batchUpdate(sql, new BatchPreparedStatementSetter() {\r\n");
-  sb.append("                //@Override\r\n");
+  sb.append("                @Override\r\n");
   sb.append("                public int getBatchSize() {\r\n");
   sb.append("                    return beans.size();\r\n");
   sb.append("                }\r\n");
-  sb.append("                //@Override\r\n");
+  sb.append("                @Override\r\n");
   sb.append("                public void setValues(PreparedStatement ps, int i) throws SQLException {\r\n");
   sb.append("                    "+beanName+" bean = beans.get(i);\r\n");
+
+
+  /**
+   * 先拼装 列字段
+   */
+  int count_jj=0;
   for (int i = 1; i <= count; i++) {
-   String f = rsmd.getColumnName(i);
-   if (f.equals(key))
-    continue;
-   String s = "bean." + f;
-   int columnType = rsmd.getColumnType(i);
-   if (columnType == java.sql.Types.TIMESTAMP) {
-    s = "new Timestamp(bean." + f + ".getTime())";
-   }else if(columnType == java.sql.Types.DATE){
-    s = "new java.sql.Date(bean." + f + ".getTime())";
-   }
-   sb.append("                    ps."+BatchOP.setOP(rsmd, i)+"(").append(i - 1).append(", " + s + ");\r\n");
+      String f = rsmd.getColumnName(i);
+      if (primarykey.contains(f)){
+       count_jj++;
+       continue;
+      }
+
+      String s = "bean." + f;
+      int columnType = rsmd.getColumnType(i);
+      if (columnType == java.sql.Types.TIMESTAMP) {
+       s = "new Timestamp(bean." + f + ".getTime())";
+      }else if(columnType == java.sql.Types.DATE){
+       s = "new java.sql.Date(bean." + f + ".getTime())";
+      }
+      //如果表中主键列字段排序 放在后面 则特殊处理
+      sb.append("                    ps."+BatchOP.setOP(rsmd, i)+"(").append(i - count_jj).append(", " + s + ");\r\n");
+
   }
-  String s = "bean." + key;
-  sb.append("                    ps."+BatchOP.setOP(rsmd, key)+"("+count+", " + s + ");\r\n");
+
+  /**
+   * 再拼装 WHERE 后面的 主键 条件
+   */
+   for (int i = 0; i < primarykey.size(); i++) {
+    String s = "bean." + primarykey.get(i);
+    int index = (count - primarykey.size()) + i +1 ;
+    sb.append("                    ps."+BatchOP.setOP(rsmd, primarykey.get(i))+"("+index+", " + s + ");\r\n");
+   }
+
+
+
   sb.append("                }\r\n");
   sb.append("            });\r\n");
   sb.append("        }catch(Exception e){\r\n");
@@ -974,42 +1195,7 @@ public class NewDaoBuilder {
   sb.append("\r\n");
   return sb.toString();
  }
-/* static String generateCreateTable(Connection conn, ResultSet rs,
-   ResultSetMetaData rsmd, String tableName) throws Exception {
-  String createSql = SqlEx.createMysqlTable(conn, rs, tableName);
-  String[] ss = createSql.split("\n");
-  StringBuffer sb2 = new StringBuffer();
-  int i = 0;
-  for (String s : ss) {
-   if(i > 0)
-    sb2.append("                ");
-   sb2.append("\"");
-   sb2.append(s);
-   sb2.append("\"");
-   i ++;
-   if(i < ss.length){
-    sb2.append(" +");
-    sb2.append("\n ");
-   }
-  }
-  StringBuffer sb = new StringBuffer();
-  sb.append("    //创建表\r\n");
-  sb.append("    public void createTable(String TABLENAME2) throws SQLException{\r\n");
-  sb.append("        try{\r\n");
-  sb.append("            String sql;\r\n");
-  sb.append("            sql = "+sb2.toString()+";\r\n");
-  sb.append("            Map<String,String> params = new HashMap<String,String>();\r\n");
-  sb.append("            params.put(\"TABLENAME\", TABLENAME2);\r\n");
-  sb.append("            sql  = EasyTemplate.make(sql, params);\r\n");
-  sb.append("            _np.getJdbcOperations().execute(sql);\r\n");
-  sb.append("        }catch(Exception e){\r\n");
-  sb.append("            log.error(\"createTable\",e);").append("\r\n");
-  sb.append("            throw new SQLException(\"createTable is error\", e);\r\n");
-  sb.append("        }\r\n");
-  sb.append("    }\r\n");
-  sb.append("\r\n");
-  return sb.toString();
- }*/
+
  
  
  static String generateCreateTable(Connection conn, ResultSet rs,
@@ -1115,6 +1301,7 @@ public class NewDaoBuilder {
  static String generateExecute(ResultSetMetaData rsmd, String tableName) {
   StringBuffer sb = new StringBuffer();
   sb.append("    //执行sql\r\n");
+  sb.append("    @Override\r\n");
   sb.append("    public void execute(String sql) throws SQLException{\r\n");
   sb.append("        try{\r\n");
   sb.append("            _np.getJdbcOperations().execute(sql);\r\n");
@@ -1134,7 +1321,7 @@ public class NewDaoBuilder {
   int count = rsmd.getColumnCount();
   for (int i = 1; i <= count; i++) {
    String columnName = rsmd.getColumnName(i);
-   if (key != null && key.equals(columnName) && !bkey)
+   if (key != null && key.contains(columnName) && !bkey)
     continue;
    fields.append(columnName);
    if (i < count) {
@@ -1177,7 +1364,7 @@ public class NewDaoBuilder {
   int count = rsmd.getColumnCount();
   for (int i = 1; i <= count; i++) {
    String columnName = rsmd.getColumnName(i);
-   if (key != null &&  key.equals(columnName) && !bkey)
+   if (key != null &&  key.contains(columnName) && !bkey)
     continue;
    values.append(":").append(columnName);
    if (i < count) {

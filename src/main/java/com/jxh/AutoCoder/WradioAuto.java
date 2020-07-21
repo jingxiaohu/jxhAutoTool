@@ -20,12 +20,12 @@ public class WradioAuto {
 		String pkg = "com.gjp.wz.springjdbc.";
 		/*String[] tablenames = {"user_info","car_in_out","fault_record","park_coupon","park_device","park_info","pay_park","rental_charging_rule","user_moneyback","user_park_coupon","user_login_log",
 				"sms_running","sms_validate","user_feedback","user_carcode","pay_month_park","china_area","park_heartbeat","intimes_pay","user_vc_act","park_userinfo","parkinfo_partner","user_cash_apply"};*/
-		String[] tablenames = {"country_area"};
+		String[] tablenames = {"sysdata","merchant_shop_material"};
 		String ip = "127.0.0.1";
 		int port = 3306;
 		String user = "root";
 		String password = "root";
-		String databaseName = "account2";
+		String databaseName = "account3";
 		ABuilder.AutoCoder(is_cover_DaoFactory,is_change_DaoName,is_javabean_WrapperClass,is_maven,src,moduleName, pkg, tablenames, ip, port, user, password, databaseName);
 	}
 

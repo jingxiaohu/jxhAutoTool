@@ -2,8 +2,23 @@ package com.highbeauty.sql.spring.builder;
 
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.List;
 
 public class BatchOP {
+
+/*	public static String setOP(ResultSetMetaData rsmd, List<String> columnName_list)
+			throws SQLException {
+		int count = rsmd.getColumnCount();
+		for (int i = 1; i <= count; i++) {
+			String key = rsmd.getColumnName(i);
+			if (!columnName_list.contains(key))
+				continue;
+
+			return setOP(rsmd, i);
+		}
+		return "";
+	}*/
+
 	public static String setOP(ResultSetMetaData rsmd, String columnName)
 			throws SQLException {
 		int count = rsmd.getColumnCount();

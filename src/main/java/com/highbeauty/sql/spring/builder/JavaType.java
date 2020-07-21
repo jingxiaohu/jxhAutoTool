@@ -10,6 +10,7 @@ import java.sql.RowId;
 import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.sql.Time;
+import java.util.List;
 
 public class JavaType {
 
@@ -25,6 +26,9 @@ public class JavaType {
 		}
 		return "";
 	}
+
+
+
 	
 	public static String getType(ResultSetMetaData rsmd, String columnName,boolean flag)
 	throws SQLException {
