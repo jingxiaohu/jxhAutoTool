@@ -94,7 +94,8 @@ public class BatchOP {
 		case java.sql.Types.ROWID:
 			return "setRowId";
 		case java.sql.Types.SMALLINT:
-			return "setShort";
+			//return "setShort";
+			return "setInt";
 		case java.sql.Types.SQLXML:
 			return "setSQLXML";
 		case java.sql.Types.STRUCT:
@@ -104,7 +105,8 @@ public class BatchOP {
 		case java.sql.Types.TIMESTAMP:
 			return "setTimestamp";
 		case java.sql.Types.TINYINT:
-			return "setByte";
+			//return "setByte";
+			return "setInt";
 		case java.sql.Types.VARBINARY:
 			return "setBytes";
 		case java.sql.Types.VARCHAR:
