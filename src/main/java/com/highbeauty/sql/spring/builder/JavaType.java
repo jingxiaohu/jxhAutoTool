@@ -195,7 +195,8 @@ public class JavaType {
 		case java.sql.Types.ROWID:
 			return getBasicType(RowId.class.getName());
 		case java.sql.Types.SMALLINT:
-			return getBasicType(Short.class.getSimpleName());
+			//return getBasicType(Short.class.getSimpleName());
+			return getBasicType(Integer.class.getSimpleName());
 		case java.sql.Types.SQLXML:
 			return getBasicType(SQLXML.class.getName());
 		case java.sql.Types.STRUCT:
@@ -205,7 +206,8 @@ public class JavaType {
 		case java.sql.Types.TIMESTAMP:
 			return getBasicType(java.util.Date.class.getName());
 		case java.sql.Types.TINYINT:
-			return getBasicType(Byte.class.getSimpleName());
+			//return getBasicType(Byte.class.getSimpleName());
+			return getBasicType(Integer.class.getSimpleName());
 		case java.sql.Types.VARBINARY:
 			return getBasicType("byte[]");
 		case java.sql.Types.VARCHAR:
