@@ -186,8 +186,8 @@ public class NewDaoBuilder {
     }
     key = buffer_prk.deleteCharAt(buffer_prk.length() - 1).toString();
   }
-  String fields = getFields(rsmd, key, true);
-  String fields2 = getFields(rsmd, key, false);
+  String fields = getFields(rsmd, key, true,primarykey);
+  String fields2 = getFields(rsmd, key, false,primarykey);
   String fieldArrays = getFieldArrayString(rsmd, key);
  
   sb.append("    private  String[] carrays ="+fieldArrays + ";\r\n");
@@ -243,8 +243,8 @@ public class NewDaoBuilder {
   }
   String beanName = StrEx.upperFirst(PinYin.getShortPinYin(tableName));
   // Connection
-  String fields = getFields(rsmd, key, false);
-  String values = getValues(rsmd, key, false);
+  String fields = getFields(rsmd, key, false,primarykey);
+  String values = getValues(rsmd, key, false,primarykey);
   sb.append("    //添加数据\r\n");
   sb.append("    public long insert(" + beanName + " bean) throws SQLException{\r\n");
   sb.append("        return insert(bean, TABLENAME);\r\n");
@@ -272,8 +272,8 @@ public class NewDaoBuilder {
   sb.append("\r\n");
  
   // Connection
-  fields = getFields(rsmd, key, true);
-  values = getValues(rsmd, key, true);
+  fields = getFields(rsmd, key, true,primarykey);
+  values = getValues(rsmd, key, true,primarykey);
   sb.append("    //添加数据\r\n");
   sb.append("    public long insert_primarykey(" + beanName + " bean) throws SQLException{\r\n");
   sb.append("        return insert_primarykey(bean, TABLENAME);\r\n");
@@ -315,8 +315,8 @@ public class NewDaoBuilder {
   }
   String beanName = StrEx.upperFirst(PinYin.getShortPinYin(tableName));
   // Connection
-  String fields = getFields(rsmd, key, false);
-  String values = getQValues(rsmd, key, false);
+  String fields = getFields(rsmd, key, false,primarykey);
+  String values = getQValues(rsmd, key, false,primarykey);
   sb.append("    //批量添加数据\r\n");
   sb.append("    public int[] insert(List<" + beanName + "> beans) throws SQLException{\r\n");
   sb.append("        return insert(beans, TABLENAME);\r\n");
@@ -511,7 +511,7 @@ public class NewDaoBuilder {
 
   }
   String beanName = StrEx.upperFirst(PinYin.getShortPinYin(tableName));
-  String fields = getFields(rsmd, key, true);
+  String fields = getFields(rsmd, key, true,primarykey);
 
    StringBuffer paramsTypeBuff = new StringBuffer();
    StringBuffer paramsStrBuff = new StringBuffer();
@@ -582,7 +582,7 @@ public class NewDaoBuilder {
 
   }
   String beanName = StrEx.upperFirst(PinYin.getShortPinYin(tableName));
-  String fields = getFields(rsmd, key, true);
+  String fields = getFields(rsmd, key, true,primarykey);
 
 
    StringBuffer paramsTypeBuff = new StringBuffer();
@@ -673,7 +673,7 @@ public class NewDaoBuilder {
    wy = mi.wy;
   }
   String fname = "selectBy" + ukey;
-  String fields = getFields(rsmd, pk, true);
+  String fields = getFields(rsmd, pk, true,primarykey);
  
   sb.append("    //根据索引"+ukey+"查询\r\n");
   if (wy) {
@@ -930,7 +930,7 @@ public class NewDaoBuilder {
   if (pk == null)
    pk = "";
   String beanName = StrEx.upperFirst(PinYin.getShortPinYin(tableName));
-  String fields = getFields(rsmd, pk, true);
+  String fields = getFields(rsmd, pk, true,primarykey);
   sb.append("    //分页查询\r\n");
   sb.append("    public List<" + beanName + "> selectByPage(int begin, int num) {\r\n");
   sb.append("        return selectByPage(begin, num, TABLENAME);\r\n");
@@ -1316,13 +1316,18 @@ public class NewDaoBuilder {
  
  
  public static String getFields(ResultSetMetaData rsmd, String key,
-   boolean bkey) throws SQLException {
+   boolean bkey,List<String> primarykey) throws SQLException {
   StringBuffer fields = new StringBuffer();
   int count = rsmd.getColumnCount();
   for (int i = 1; i <= count; i++) {
    String columnName = rsmd.getColumnName(i);
-   if (key != null && key.contains(columnName) && !bkey)
-    continue;
+
+   if(null != primarykey && primarykey.contains(columnName) && primarykey.size() == 1 && !bkey){
+       continue;
+   }else{
+    if (key != null && key.equals(columnName) && !bkey)
+       continue;
+   }
    fields.append(columnName);
    if (i < count) {
     fields.append(",");
@@ -1359,13 +1364,17 @@ public class NewDaoBuilder {
   return fields.toString();
  }
  public static String getValues(ResultSetMetaData rsmd, String key,
-   boolean bkey) throws SQLException {
+   boolean bkey,List<String> primarykey) throws SQLException {
   StringBuffer values = new StringBuffer();
   int count = rsmd.getColumnCount();
   for (int i = 1; i <= count; i++) {
    String columnName = rsmd.getColumnName(i);
-   if (key != null &&  key.contains(columnName) && !bkey)
+   if(null != primarykey && primarykey.contains(columnName) && primarykey.size() == 1 && !bkey){
     continue;
+   }else{
+    if (key != null && key.equals(columnName) && !bkey)
+     continue;
+   }
    values.append(":").append(columnName);
    if (i < count) {
     values.append(",");
@@ -1374,13 +1383,17 @@ public class NewDaoBuilder {
   return values.toString();
  }
  public static String getQValues(ResultSetMetaData rsmd, String key,
-   boolean bkey) throws SQLException {
+   boolean bkey,List<String> primarykey) throws SQLException {
   StringBuffer values = new StringBuffer();
   int count = rsmd.getColumnCount();
   for (int i = 1; i <= count; i++) {
    String columnName = rsmd.getColumnName(i);
-   if (key != null && key.equals(columnName) && !bkey)
+   if(null != primarykey && primarykey.contains(columnName) && primarykey.size() == 1 && !bkey){
     continue;
+   }else{
+    if (key != null && key.equals(columnName) && !bkey)
+     continue;
+   }
    values.append("?");
    if (i < count) {
     values.append(",");
