@@ -98,16 +98,21 @@ public class NewDaoBuilder {
   sb.append(generateDef(rsmd, tableName));
   // construct
   //sb.append(generateConstruct(rsmd, tableName));
-  // insert
-  sb.append(generateInsert(rsmd, tableName));
-  // batch insert
-  sb.append(generateBatchInsert(rsmd, tableName));
-  
+
+
   if(primarykey != null){
-	// selectAll
-	  sb.append(generateSelectAll(rsmd, tableName));
-	  // Select
-	  sb.append(generateSelect(rsmd, tableName));
+   // insert
+   sb.append(generateInsert(rsmd, tableName));
+   // batch insert
+   sb.append(generateBatchInsert(rsmd, tableName));
+   // batch insertPrimarykey
+   sb.append(generateBatchInsertPrimarykey(rsmd, tableName));
+
+   // selectAll
+   sb.append(generateSelectAll(rsmd, tableName));
+   // Select
+   sb.append(generateSelect(rsmd, tableName));
+
   }
 
   // count
@@ -302,6 +307,15 @@ public class NewDaoBuilder {
   sb.append("\r\n");
   return sb.toString();
  }
+
+
+ /**
+  * 批量插入 不带主键
+  * @param rsmd
+  * @param tableName
+  * @return
+  * @throws SQLException
+  */
  static String generateBatchInsert(ResultSetMetaData rsmd, String tableName)
    throws SQLException {
   StringBuffer sb = new StringBuffer();
@@ -367,6 +381,86 @@ public class NewDaoBuilder {
  
   return sb.toString();
  }
+
+
+
+
+ /**
+  * 批量插入 带主键
+  * @param rsmd
+  * @param tableName
+  * @return
+  * @throws SQLException
+  */
+ static String generateBatchInsertPrimarykey(ResultSetMetaData rsmd, String tableName) throws SQLException {
+  StringBuffer sb = new StringBuffer();
+  String key = AutoIncrement.getAutoIncrement(rsmd);
+  if (key == null) {
+     StringBuffer buffer_prk = new StringBuffer();
+     for (String prk : primarykey) {
+      buffer_prk.append(prk).append(",");
+     }
+     key = buffer_prk.deleteCharAt(buffer_prk.length() - 1).toString();
+  }
+  String beanName = StrEx.upperFirst(PinYin.getShortPinYin(tableName));
+  // Connection
+  String fields = getFields(rsmd, key, true,primarykey);
+  String values = getQValues(rsmd, key, true,primarykey);
+  sb.append("    //批量添加数据\r\n");
+  sb.append("    public int[] insertPrimarykey(List<" + beanName + "> beans) throws SQLException{\r\n");
+  sb.append("        return insert(beans, TABLENAME);\r\n");
+  sb.append("    }\r\n");
+  sb.append("\r\n");
+
+  sb.append("    //批量添加数据\r\n");
+  sb.append("    public int[] insertPrimarykey(final List<" + beanName + "> beans, String TABLENAME2) throws SQLException{\r\n");
+  sb.append("        String sql;\r\n");
+  sb.append("        try{\r\n");
+  sb.append("            sql = \"INSERT INTO \"+TABLENAME2+\" (" + fields +  ") VALUES (" + values + ")\";\r\n");
+  sb.append("            return _np.getJdbcOperations().batchUpdate(sql, new BatchPreparedStatementSetter() {\r\n");
+  sb.append("                @Override\r\n");
+  sb.append("                public int getBatchSize() {\r\n");
+  sb.append("                    return beans.size();\r\n");
+  sb.append("                }\r\n");
+  sb.append("                @Override\r\n");
+  sb.append("                public void setValues(PreparedStatement ps, int i) throws SQLException {\r\n");
+  sb.append("                    " + beanName + " bean = beans.get(i);\r\n");
+  int count = rsmd.getColumnCount();
+  for (int i = 1; i <= count; i++) {
+   String f = rsmd.getColumnName(i);
+   String s = "bean." + f;
+   int columnType = rsmd.getColumnType(i);
+   if (columnType == java.sql.Types.TIMESTAMP) {
+    s = "new Timestamp(bean." + f + ".getTime())";
+   }else if(columnType == java.sql.Types.DATE){
+    s = "new java.sql.Date(bean." + f + ".getTime())";
+   }
+   sb.append("                    ps.").append(BatchOP.setOP(rsmd, i))
+           .append("(").append(i - 1).append(", " + s + ");\r\n");
+  }
+  sb.append("                }\r\n");
+  sb.append("            });\r\n");
+  sb.append("        }catch(Exception e){\r\n");
+  sb.append("            //createTable(TABLENAME2);\r\n");
+  sb.append("            log.error(\"int[] insert\", e);").append("\r\n");
+//	 sb.append("            return new int[0];\r\n");
+  sb.append("            throw new SQLException(\"insert is error\", e);\r\n");
+  sb.append("        }\r\n");
+  // }else{
+  // sb.append("return 1;");
+  // }
+  sb.append("    }\r\n");
+  sb.append("\r\n");
+
+  return sb.toString();
+ }
+
+
+
+
+
+
+
  static String generateDelete(ResultSetMetaData rsmd, String tableName)
    throws SQLException {
   StringBuffer sb = new StringBuffer();
