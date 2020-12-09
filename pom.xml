@@ -26,7 +26,7 @@
             <version>4.12</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
+        <!--<dependency>
 
             <groupId>javax.xml.bind</groupId>
 
@@ -34,7 +34,7 @@
 
             <version>2.4.0-b180725.0427</version>
 
-        </dependency>
+        </dependency>-->
     </dependencies>
 
     <build>
@@ -46,8 +46,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.2</version><!--$NO-MVN-MAN-VER$ -->
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                     <encoding>UTF-8</encoding><!-- 指定编码格式，否则在DOS下运行mvn compile命令时会出现莫名的错误，因为系统默认使用GBK编码 -->
                 </configuration>
             </plugin>
